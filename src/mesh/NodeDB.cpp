@@ -1,3 +1,4 @@
+#include "../userPrefs.h"
 #include "configuration.h"
 #if !MESHTASTIC_EXCLUDE_GPS
 #include "GPS.h"
@@ -237,10 +238,22 @@ void NodeDB::installDefaultConfig()
     config.lora.tx_enabled =
         true; // FIXME: maybe false in the future, and setting region to enable it. (unset region forces it off)
     config.lora.override_duty_cycle = false;
+#ifdef CONFIG_LORA_REGION_USERPREFS
+    config.lora.region = CONFIG_LORA_REGION_USERPREFS;
+#else
     config.lora.region = meshtastic_Config_LoRaConfig_RegionCode_UNSET;
+#endif
+#ifdef LORACONFIG_MODEM_PRESET_USERPREFS
+    config.lora.modem_preset = LORACONFIG_MODEM_PRESET_USERPREFS;
+#else
     config.lora.modem_preset = meshtastic_Config_LoRaConfig_ModemPreset_LONG_FAST;
+#endif
     config.lora.hop_limit = HOP_RELIABLE;
+#ifdef CONFIG_LORA_IGNORE_MQTT_USERPREFS
+    config.lora.ignore_mqtt = CONFIG_LORA_IGNORE_MQTT_USERPREFS;
+#else
     config.lora.ignore_mqtt = false;
+#endif
 #ifdef PIN_GPS_EN
     config.position.gps_en_gpio = PIN_GPS_EN;
 #endif
@@ -290,12 +303,16 @@ void NodeDB::installDefaultConfig()
          meshtastic_Config_PositionConfig_PositionFlags_SPEED | meshtastic_Config_PositionConfig_PositionFlags_HEADING |
          meshtastic_Config_PositionConfig_PositionFlags_DOP | meshtastic_Config_PositionConfig_PositionFlags_SATINVIEW);
 
-#ifdef RADIOMASTER_900_BANDIT_NANO
+#ifdef DISPLAY_FLIP_SCREEN
     config.display.flip_screen = true;
 #endif
 #ifdef T_WATCH_S3
     config.display.screen_on_secs = 30;
     config.display.wake_on_tap_or_motion = true;
+#endif
+#ifdef HELTEC_VISION_MASTER_E290
+    // Orient so that LoRa antenna faces up
+    config.display.flip_screen = true;
 #endif
 
     initConfigIntervals();
@@ -993,7 +1010,8 @@ meshtastic_NodeInfoLite *NodeDB::getOrCreateMeshNode(NodeNum n)
         if ((numMeshNodes >= MAX_NUM_NODES) || (memGet.getFreeHeap() < meshtastic_NodeInfoLite_size * 3)) {
             if (screen)
                 screen->print("Warn: node database full!\nErasing oldest entry\n");
-            LOG_WARN("Node database full! Erasing oldest entry\n");
+            LOG_WARN("Node database full with %i nodes and %i bytes free! Erasing oldest entry\n", numMeshNodes,
+                     memGet.getFreeHeap());
             // look for oldest node and erase it
             uint32_t oldest = UINT32_MAX;
             int oldestIndex = -1;

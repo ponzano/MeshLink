@@ -400,14 +400,6 @@ bool GPS::setup()
     int msglen = 0;
 
     if (!didSerialInit) {
-#ifdef GNSS_AIROHA
-        if (tx_gpio && gnssModel == GNSS_MODEL_UNKNOWN) {
-            probe(GPS_BAUDRATE);
-            LOG_INFO("GPS setting to %d.\n", GPS_BAUDRATE);
-        }
-#else
-#if !defined(GPS_UC6580)
-
         if (tx_gpio && gnssModel == GNSS_MODEL_UNKNOWN) {
 
             // if GPS_BAUDRATE is specified in variant (i.e. not 9600), skip to the specified rate.
@@ -430,9 +422,6 @@ bool GPS::setup()
         } else {
             gnssModel = GNSS_MODEL_UNKNOWN;
         }
-#else
-        gnssModel = GNSS_MODEL_UC6580;
-#endif
 
         if (gnssModel == GNSS_MODEL_MTK) {
             /*
@@ -784,7 +773,6 @@ bool GPS::setup()
                 LOG_INFO("GNSS module configuration saved!\n");
             }
         }
-#endif
         didSerialInit = true;
     }
 
@@ -1191,10 +1179,6 @@ GnssModel_t GPS::probe(int serialSpeed)
         _serial_gps->updateBaudRate(serialSpeed);
     }
 #endif
-#ifdef GNSS_AIROHA
-
-    return GNSS_MODEL_UNKNOWN;
-#else
 #ifdef GPS_DEBUG
     for (int i = 0; i < 20; i++) {
         getACK("$GP", 200);
@@ -1217,11 +1201,20 @@ GnssModel_t GPS::probe(int serialSpeed)
         return GNSS_MODEL_UC6580;
     }
 
-    // Get version information
+    // Get version information for ATGM336H
     clearBuffer();
     _serial_gps->write("$PCAS06,1*1A\r\n");
     if (getACK("$GPTXT,01,01,02,HW=ATGM336H", 500) == GNSS_RESPONSE_OK) {
         LOG_INFO("ATGM336H GNSS init succeeded, using ATGM336H Module\n");
+        return GNSS_MODEL_ATGM336H;
+    }
+
+    /* ATGM332D series (-11(GPS), -21(BDS), -31(GPS+BDS), -51(GPS+GLONASS), -71-0(GPS+BDS+GLONASS))
+    based on AT6558 */
+    clearBuffer();
+    _serial_gps->write("$PCAS06,1*1A\r\n");
+    if (getACK("$GPTXT,01,01,02,HW=ATGM332D", 500) == GNSS_RESPONSE_OK) {
+        LOG_INFO("ATGM332D detected, using ATGM336H Module\n");
         return GNSS_MODEL_ATGM336H;
     }
 
@@ -1350,7 +1343,6 @@ GnssModel_t GPS::probe(int serialSpeed)
     }
 
     return GNSS_MODEL_UBLOX;
-#endif // !GNSS_Airoha
 }
 
 GPS *GPS::createGps()
