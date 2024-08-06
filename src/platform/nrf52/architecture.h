@@ -60,6 +60,8 @@
 #define HW_VENDOR meshtastic_HardwareModel_NRF52_PROMICRO_DIY
 #elif defined(WIO_WM1110)
 #define HW_VENDOR meshtastic_HardwareModel_WIO_WM1110
+#elif defined(MESHLINK)
+#define HW_VENDOR meshtastic_HardwareModel_MESHLINK
 #elif defined(PRIVATE_HW) || defined(FEATHER_DIY)
 #define HW_VENDOR meshtastic_HardwareModel_PRIVATE_HW
 #else

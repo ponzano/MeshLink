@@ -33,14 +33,19 @@ const uint32_t g_ADigitalPinMap[] = {
 void initVariant()
 {
     // LED1 & LED2
-    pinMode(PIN_LED1, OUTPUT);
-    ledOff(PIN_LED1);
-    pinMode(PIN_LED2, OUTPUT);
-    digitalWrite(PIN_LED2, HIGH); //Watchdog enable pin
+    //pinMode(PIN_LED1, OUTPUT);
+    //ledOff(PIN_LED1);
 
- 
+    //pinMode(PIN_LED2, OUTPUT);
+    //ledOff(PIN_LED2);
+    pinMode(PIN_LED1, OUTPUT);
+    digitalWrite(PIN_LED1, LOW);
+
 
     // 3V3 Power Rail
     pinMode(PIN_3V3_EN, OUTPUT);
-    digitalWrite(PIN_3V3_EN, HIGH);
+    digitalWrite(PIN_3V3_EN, LOW);
+    pinMode(PIN_GPS_EN, OUTPUT);
+    digitalWrite(PIN_GPS_EN, LOW);
+    
 }

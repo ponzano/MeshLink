@@ -178,6 +178,7 @@ typedef enum _meshtastic_HardwareModel {
     meshtastic_HardwareModel_HELTEC_MESH_NODE_T114 = 69,
     /* Sensecap Indicator from Seeed Studio. ESP32-S3 device with TFT and RP2040 coprocessor */
     meshtastic_HardwareModel_SENSECAP_INDICATOR = 70,
+    meshtastic_HardwareModel_MESHLINK = 71,
     /* ------------------------------------------------------------------------------------------------------------------------------------------
  Reserved ID For developing private Ports. These will show up in live traffic sparsely, so we can use a high number. Keep it within 8 bits.
  ------------------------------------------------------------------------------------------------------------------------------------------ */
