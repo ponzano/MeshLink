@@ -185,7 +185,7 @@ SO GPIO 39/TXEN MAY NOT BE DEFINED FOR SUCCESSFUL OPERATION OF THE SX1262 - TG
 // Therefore must be 1 to keep peripherals powered
 // Power is on the controllable 3V3_S rail
 // #define PIN_GPS_RESET (34)
-
+#define GNSS_MODEL_ATGM336H
 #define PIN_GPS_PPS (26) // Pulse per second input from the GPS
 
 #define GPS_TX_PIN (4) // This is for bits going TOWARDS the CPU
