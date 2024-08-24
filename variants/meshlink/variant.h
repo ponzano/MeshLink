@@ -19,8 +19,6 @@
 #ifndef _VARIANT_MESHLINK_
 #define _VARIANT_MESHLINK_
 #define MESHLINK
-
-
 /** Master clock frequency */
 #define VARIANT_MCK (64000000ul)
 
@@ -87,12 +85,13 @@ static const uint8_t A7 = PIN_A7;
 /*
  * Serial interfaces
  */
-
+#define PIN_SERIAL2_TX (4)
+#define PIN_SERIAL2_RX (5)
 
 
 // Connected to Jlink CDC
-#define PIN_SERIAL2_RX (40)
-#define PIN_SERIAL2_TX (7)
+#define PIN_SERIAL1_RX (40)
+#define PIN_SERIAL1_TX (7)
 
 /*
  * SPI Interfaces
@@ -185,16 +184,19 @@ SO GPIO 39/TXEN MAY NOT BE DEFINED FOR SUCCESSFUL OPERATION OF THE SX1262 - TG
 // Therefore must be 1 to keep peripherals powered
 // Power is on the controllable 3V3_S rail
 // #define PIN_GPS_RESET (34)
-#define GNSS_MODEL_ATGM336H
-#define PIN_GPS_PPS (26) // Pulse per second input from the GPS
+#define HAS_GPS 1
+//#define GNSS_ATGM336H
+#define GPS_BAUDRATE 9600
+#undef GPS_RX_PIN
+#undef GPS_TX_PIN
+#define PIN_GPS_PPS 26 // Pulse per second input from the GPS
 
-#define GPS_TX_PIN (4) // This is for bits going TOWARDS the CPU
-#define GPS_RX_PIN (5) // This is for bits going TOWARDS the GPS
+#define GPS_TX_PIN PIN_SERIAL2_TX // This is for bits going TOWARDS the CPU
+#define GPS_RX_PIN PIN_SERIAL2_RX // This is for bits going TOWARDS the GPS
 
-#define GPS_THREAD_INTERVAL 50
+//#define GPS_THREAD_INTERVAL 50
 
-#define PIN_SERIAL1_RX GPS_TX_PIN
-#define PIN_SERIAL1_TX GPS_RX_PIN
+
 
 // Define pin to enable GPS toggle (set GPIO to LOW) via user button triple press
 #define PIN_GPS_EN (0)

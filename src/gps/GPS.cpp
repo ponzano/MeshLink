@@ -1205,6 +1205,9 @@ GnssModel_t GPS::probe(int serialSpeed)
 #ifdef GNSS_AIROHA
     return GNSS_MODEL_AG3335;
 #endif
+#ifdef GNSS_ATGM336H
+    return GNSS_MODEL_ATGM336H;
+#endif
 #ifdef GPS_DEBUG
     for (int i = 0; i < 20; i++) {
         getACK("$GP", 200);
