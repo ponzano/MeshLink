@@ -1,6 +1,4 @@
 .pio
-main/configuration.h
-main/credentials.h
 
 # ignore vscode IDE settings files
 .vscode/*
@@ -33,5 +31,6 @@ release/
 /compile_commands.json
 src/mesh/raspihttp/certificate.pem
 src/mesh/raspihttp/private_key.pem
+
 .vscode/extensions.json
 .vscode/settings.json

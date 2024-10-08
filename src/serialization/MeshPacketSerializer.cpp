@@ -1,3 +1,4 @@
+#ifndef NRF52_USE_JSON
 #include "MeshPacketSerializer.h"
 #include "JSON.h"
 #include "NodeDB.h"
@@ -76,6 +77,13 @@ std::string MeshPacketSerializer::JsonSerialize(const meshtastic_MeshPacket *mp,
                     msgPayload["wind_direction"] = new JSONValue((uint)decoded->variant.environment_metrics.wind_direction);
                     msgPayload["wind_gust"] = new JSONValue(decoded->variant.environment_metrics.wind_gust);
                     msgPayload["wind_lull"] = new JSONValue(decoded->variant.environment_metrics.wind_lull);
+                } else if (decoded->which_variant == meshtastic_Telemetry_air_quality_metrics_tag) {
+                    msgPayload["pm10"] = new JSONValue((unsigned int)decoded->variant.air_quality_metrics.pm10_standard);
+                    msgPayload["pm25"] = new JSONValue((unsigned int)decoded->variant.air_quality_metrics.pm25_standard);
+                    msgPayload["pm100"] = new JSONValue((unsigned int)decoded->variant.air_quality_metrics.pm100_standard);
+                    msgPayload["pm10_e"] = new JSONValue((unsigned int)decoded->variant.air_quality_metrics.pm10_environmental);
+                    msgPayload["pm25_e"] = new JSONValue((unsigned int)decoded->variant.air_quality_metrics.pm25_environmental);
+                    msgPayload["pm100_e"] = new JSONValue((unsigned int)decoded->variant.air_quality_metrics.pm100_environmental);
                 } else if (decoded->which_variant == meshtastic_Telemetry_power_metrics_tag) {
                     msgPayload["voltage_ch1"] = new JSONValue(decoded->variant.power_metrics.ch1_voltage);
                     msgPayload["current_ch1"] = new JSONValue(decoded->variant.power_metrics.ch1_current);
@@ -86,7 +94,7 @@ std::string MeshPacketSerializer::JsonSerialize(const meshtastic_MeshPacket *mp,
                 }
                 jsonObj["payload"] = new JSONValue(msgPayload);
             } else if (shouldLog) {
-                LOG_ERROR("Error decoding protobuf for telemetry message!\n");
+                LOG_ERROR(errStr, msgType.c_str());
             }
             break;
         }
@@ -104,7 +112,7 @@ std::string MeshPacketSerializer::JsonSerialize(const meshtastic_MeshPacket *mp,
                 msgPayload["role"] = new JSONValue((int)decoded->role);
                 jsonObj["payload"] = new JSONValue(msgPayload);
             } else if (shouldLog) {
-                LOG_ERROR("Error decoding protobuf for nodeinfo message!\n");
+                LOG_ERROR(errStr, msgType.c_str());
             }
             break;
         }
@@ -149,12 +157,12 @@ std::string MeshPacketSerializer::JsonSerialize(const meshtastic_MeshPacket *mp,
                 }
                 jsonObj["payload"] = new JSONValue(msgPayload);
             } else if (shouldLog) {
-                LOG_ERROR("Error decoding protobuf for position message!\n");
+                LOG_ERROR(errStr, msgType.c_str());
             }
             break;
         }
         case meshtastic_PortNum_WAYPOINT_APP: {
-            msgType = "position";
+            msgType = "waypoint";
             meshtastic_Waypoint scratch;
             meshtastic_Waypoint *decoded = NULL;
             memset(&scratch, 0, sizeof(scratch));
@@ -169,7 +177,7 @@ std::string MeshPacketSerializer::JsonSerialize(const meshtastic_MeshPacket *mp,
                 msgPayload["longitude_i"] = new JSONValue((int)decoded->longitude_i);
                 jsonObj["payload"] = new JSONValue(msgPayload);
             } else if (shouldLog) {
-                LOG_ERROR("Error decoding protobuf for position message!\n");
+                LOG_ERROR(errStr, msgType.c_str());
             }
             break;
         }
@@ -195,7 +203,7 @@ std::string MeshPacketSerializer::JsonSerialize(const meshtastic_MeshPacket *mp,
                 msgPayload["neighbors"] = new JSONValue(neighbors);
                 jsonObj["payload"] = new JSONValue(msgPayload);
             } else if (shouldLog) {
-                LOG_ERROR("Error decoding protobuf for neighborinfo message!\n");
+                LOG_ERROR(errStr, msgType.c_str());
             }
             break;
         }
@@ -227,7 +235,7 @@ std::string MeshPacketSerializer::JsonSerialize(const meshtastic_MeshPacket *mp,
                     msgPayload["route"] = new JSONValue(route);
                     jsonObj["payload"] = new JSONValue(msgPayload);
                 } else if (shouldLog) {
-                    LOG_ERROR("Error decoding protobuf for traceroute message!\n");
+                    LOG_ERROR(errStr, msgType.c_str());
                 }
             }
             break;
@@ -254,7 +262,7 @@ std::string MeshPacketSerializer::JsonSerialize(const meshtastic_MeshPacket *mp,
                 msgPayload["uptime"] = new JSONValue((unsigned int)decoded->uptime);
                 jsonObj["payload"] = new JSONValue(msgPayload);
             } else if (shouldLog) {
-                LOG_ERROR("Error decoding protobuf for Paxcount message!\n");
+                LOG_ERROR(errStr, msgType.c_str());
             }
             break;
         }
@@ -277,7 +285,7 @@ std::string MeshPacketSerializer::JsonSerialize(const meshtastic_MeshPacket *mp,
                     jsonObj["payload"] = new JSONValue(msgPayload);
                 }
             } else if (shouldLog) {
-                LOG_ERROR("Error decoding protobuf for RemoteHardware message!\n");
+                LOG_ERROR(errStr, "RemoteHardware");
             }
             break;
         }
@@ -347,3 +355,4 @@ std::string MeshPacketSerializer::JsonSerializeEncrypted(const meshtastic_MeshPa
     delete value;
     return jsonStr;
 }
+#endif

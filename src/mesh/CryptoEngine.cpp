@@ -11,6 +11,7 @@
 #include <Curve25519.h>
 #include <SHA256.h>
 #if !(MESHTASTIC_EXCLUDE_PKI_KEYGEN)
+
 /**
  * Create a public/private key pair with Curve25519.
  *
@@ -23,6 +24,30 @@ void CryptoEngine::generateKeyPair(uint8_t *pubKey, uint8_t *privKey)
     Curve25519::dh1(public_key, private_key);
     memcpy(pubKey, public_key, sizeof(public_key));
     memcpy(privKey, private_key, sizeof(private_key));
+}
+
+/**
+ * regenerate a public key with Curve25519.
+ *
+ * @param pubKey The destination for the public key.
+ * @param privKey The source for the private key.
+ */
+bool CryptoEngine::regeneratePublicKey(uint8_t *pubKey, uint8_t *privKey)
+{
+    if (!memfll(privKey, 0, sizeof(private_key))) {
+        Curve25519::eval(pubKey, privKey, 0);
+        if (Curve25519::isWeakPoint(pubKey)) {
+            LOG_ERROR("PKI key generation failed. Specified private key results in a weak\n");
+            memset(pubKey, 0, 32);
+            return false;
+        }
+        memcpy(private_key, privKey, sizeof(private_key));
+        memcpy(public_key, pubKey, sizeof(public_key));
+    } else {
+        LOG_WARN("X25519 key generation failed due to blank private key\n");
+        return false;
+    }
+    return true;
 }
 #endif
 void CryptoEngine::clearKeys()
@@ -41,12 +66,11 @@ bool CryptoEngine::encryptCurve25519(uint32_t toNode, uint32_t fromNode, uint64_
                                      uint8_t *bytesOut)
 {
     uint8_t *auth;
-    uint32_t *extraNonce;
     long extraNonceTmp = random();
     auth = bytesOut + numBytes;
-    extraNonce = (uint32_t *)(auth + 8);
-    *extraNonce = extraNonceTmp;
-    LOG_INFO("Random nonce value: %d\n", *extraNonce);
+    memcpy((uint8_t *)(auth + 8), &extraNonceTmp,
+           sizeof(uint32_t)); // do not use dereference on potential non aligned pointers : *extraNonce = extraNonceTmp;
+    LOG_INFO("Random nonce value: %d\n", extraNonceTmp);
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(toNode);
     if (node->num < 1 || node->user.public_key.size == 0) {
         LOG_DEBUG("Node %d or their public_key not found\n", toNode);
@@ -55,14 +79,15 @@ bool CryptoEngine::encryptCurve25519(uint32_t toNode, uint32_t fromNode, uint64_
     if (!crypto->setDHKey(toNode)) {
         return false;
     }
-    initNonce(fromNode, packetNum, *extraNonce);
+    initNonce(fromNode, packetNum, extraNonceTmp);
 
     // Calculate the shared secret with the destination node and encrypt
     printBytes("Attempting encrypt using nonce: ", nonce, 13);
-    printBytes("Attempting encrypt using shared_key: ", shared_key, 32);
+    printBytes("Attempting encrypt using shared_key starting with: ", shared_key, 8);
     aes_ccm_ae(shared_key, 32, nonce, 8, bytes, numBytes, nullptr, 0, bytesOut,
                auth); // this can write up to 15 bytes longer than numbytes past bytesOut
-    *extraNonce = extraNonceTmp;
+    memcpy((uint8_t *)(auth + 8), &extraNonceTmp,
+           sizeof(uint32_t)); // do not use dereference on potential non aligned pointers : *extraNonce = extraNonceTmp;
     return true;
 }
 
@@ -74,11 +99,13 @@ bool CryptoEngine::encryptCurve25519(uint32_t toNode, uint32_t fromNode, uint64_
  */
 bool CryptoEngine::decryptCurve25519(uint32_t fromNode, uint64_t packetNum, size_t numBytes, uint8_t *bytes, uint8_t *bytesOut)
 {
-    uint8_t *auth; // set to last 8 bytes of text?
-    uint32_t *extraNonce;
+    uint8_t *auth;       // set to last 8 bytes of text?
+    uint32_t extraNonce; // pointer was not really used
     auth = bytes + numBytes - 12;
-    extraNonce = (uint32_t *)(auth + 8);
-    LOG_INFO("Random nonce value: %d\n", *extraNonce);
+    memcpy(&extraNonce, auth + 8,
+           sizeof(uint32_t)); // do not use dereference on potential non aligned pointers : (uint32_t *)(auth + 8);
+#ifndef PIO_UNIT_TESTING
+    LOG_INFO("Random nonce value: %d\n", extraNonce);
     meshtastic_NodeInfoLite *node = nodeDB->getMeshNode(fromNode);
 
     if (node == nullptr || node->num < 1 || node->user.public_key.size == 0) {
@@ -90,9 +117,10 @@ bool CryptoEngine::decryptCurve25519(uint32_t fromNode, uint64_t packetNum, size
     if (!crypto->setDHKey(fromNode)) {
         return false;
     }
-    initNonce(fromNode, packetNum, *extraNonce);
+#endif
+    initNonce(fromNode, packetNum, extraNonce);
     printBytes("Attempting decrypt using nonce: ", nonce, 13);
-    printBytes("Attempting decrypt using shared_key: ", shared_key, 32);
+    printBytes("Attempting decrypt using shared_key starting with: ", shared_key, 8);
     return aes_ccm_ad(shared_key, 32, nonce, 8, bytes, numBytes - 12, nullptr, 0, auth, bytesOut);
 }
 
@@ -112,11 +140,12 @@ bool CryptoEngine::setDHKey(uint32_t nodeNum)
         LOG_DEBUG("Node %d or their public_key not found\n", nodeNum);
         return false;
     }
-
+    printBytes("Generating DH with remote pubkey: ", node->user.public_key.bytes, 32);
+    printBytes("And local pubkey: ", config.security.public_key.bytes, 32);
     if (!setDHPublicKey(node->user.public_key.bytes))
         return false;
 
-    printBytes("DH Output: ", shared_key, 32);
+    // printBytes("DH Output: ", shared_key, 32);
 
     /**
      * D.J. Bernstein reccomends hashing the shared key. We want to do this because there are
@@ -141,12 +170,12 @@ bool CryptoEngine::setDHKey(uint32_t nodeNum)
 void CryptoEngine::hash(uint8_t *bytes, size_t numBytes)
 {
     SHA256 hash;
-    size_t posn, len;
+    size_t posn;
     uint8_t size = numBytes;
     uint8_t inc = 16;
     hash.reset();
     for (posn = 0; posn < size; posn += inc) {
-        len = size - posn;
+        size_t len = size - posn;
         if (len > inc)
             len = inc;
         hash.update(bytes + posn, len);
