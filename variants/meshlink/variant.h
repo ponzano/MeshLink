@@ -85,8 +85,8 @@ static const uint8_t A7 = PIN_A7;
 /*
  * Serial interfaces
  */
-#define PIN_SERIAL2_TX (4)
-#define PIN_SERIAL2_RX (5)
+#define PIN_SERIAL2_TX (5)
+#define PIN_SERIAL2_RX (4)
 
 
 // Connected to Jlink CDC
@@ -184,15 +184,15 @@ SO GPIO 39/TXEN MAY NOT BE DEFINED FOR SUCCESSFUL OPERATION OF THE SX1262 - TG
 // Therefore must be 1 to keep peripherals powered
 // Power is on the controllable 3V3_S rail
 // #define PIN_GPS_RESET (34)
-#define HAS_GPS 1
+//#define HAS_GPS 1
 //#define GNSS_ATGM336H
-#define GPS_BAUDRATE 9600
-#undef GPS_RX_PIN
-#undef GPS_TX_PIN
-#define PIN_GPS_PPS 26 // Pulse per second input from the GPS
+//#define GPS_BAUDRATE 9600
+//#undef GPS_RX_PIN
+//#undef GPS_TX_PIN
+//#define PIN_GPS_PPS 36 // Pulse per second input from the GPS
 
-#define GPS_TX_PIN PIN_SERIAL2_TX // This is for bits going TOWARDS the CPU
-#define GPS_RX_PIN PIN_SERIAL2_RX // This is for bits going TOWARDS the GPS
+#define GPS_TX_PIN PIN_SERIAL1_RX // This is for bits going TOWARDS the CPU
+#define GPS_RX_PIN PIN_SERIAL1_TX // This is for bits going TOWARDS the GPS
 
 //#define GPS_THREAD_INTERVAL 50
 
@@ -200,7 +200,7 @@ SO GPIO 39/TXEN MAY NOT BE DEFINED FOR SUCCESSFUL OPERATION OF THE SX1262 - TG
 
 // Define pin to enable GPS toggle (set GPIO to LOW) via user button triple press
 #define PIN_GPS_EN (0)
-
+#define GPS_EN_ACTIVE LOW
 
 #define PIN_BUZZER PIN_A7 // IO3 is PWM2
 
